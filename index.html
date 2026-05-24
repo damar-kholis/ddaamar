@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interiors Kinokusen - Anti Error & Langsung Bisa Dipencet</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .bg-navy-dark { background-color: #030852; }
+        .text-navy-dark { color: #030852; }
+        .border-navy-dark { border-color: #030852; }
+        .bg-discount { background-color: #D32F2F; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800" 
+      x-data="{ 
+        page: 'home', 
+        showMegaMenu: false, 
+        searchBar: false,
+        searchQuery: '',
+        selectedCategory: 'Semua',
+        selectedCity: 'Semua',
+        currentBanner: 0,
+        activeProductModal: null,
+
+        /* Data Keranjang Belanja */
+        cart: [],
+
+        /* Data Produk Utama Mentah (Langsung Jalan Tanpa LocalStorage) */
+        products: [
+            { id: 1, name: 'Kinokusen Atlas Kabinet Sepatu 4 Pintu - Krem', category: 'Furnitur', originalPrice: 2699000, discount: 22, stock: 12, image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?q=80&w=400', desc: 'Lemari sepatu minimalis dengan ventilasi udara optimal.' },
+            { id: 2, name: 'Kinokusen Ferrara Aurora Sofa Fabric 2 Seater', category: 'Furnitur', originalPrice: 6699000, discount: 7, stock: 5, image: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=400', desc: 'Sofa empuk dengan bahan kain fabric premium tahan tungau.' },
+            { id: 3, name: 'Kasur Springbed Kinokusen Orthopedic King', category: 'Kasur & Linen', originalPrice: 4500000, discount: 15, stock: 8, image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=400', desc: 'Kasur kesehatan tulang belakang dengan garansi per 10 tahun.' },
+            { id: 4, name: 'Lampu Meja Belajar LED Kinokusen Smart Eye', category: 'Elektronik', originalPrice: 350000, discount: 0, stock: 20, image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=400', desc: 'Lampu pintar dengan pelindung radiasi mata.' }
+        ],
+
+        banners: [
+            { title: 'Ubah Rumahmu Menjadi Tempat Pulang', img: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1600' },
+            { title: 'Teknologi N-Cool Dingin Maksimal', img: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?q=80&w=1600' }
+        ],
+
+        newProduct: { name: '', category: 'Furnitur', originalPrice: '', discount: 0, stock: 5, image: '', desc: '' },
+
+        getDiscountPrice(price, disc) { return price - (price * (disc / 100)); },
+        formatRupiah(num) { return 'Rp ' + parseFloat(num).toLocaleString('id-ID'); },
+        
+        addToCart(product) {
+            if(product.stock > 0) {
+                this.cart.push({ id: Date.now(), name: product.name, price: this.getDiscountPrice(product.originalPrice, product.discount), image: product.image });
+                product.stock--;
+                alert('Produk berhasil dimasukkan ke keranjang!');
+            } else {
+                alert('Maaf, stok produk habis!');
+            }
+        },
+        removeFromCart(item, index) {
+            let prod = this.products.find(p => p.name === item.name);
+            if(prod) prod.stock++;
+            this.cart.splice(index, 1);
+        }
+      }">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-2 cursor-pointer" @click="page = 'home'; selectedCategory = 'Semua'">
+                <span class="text-3xl font-black text-navy-dark tracking-tighter">K<span class="text-xl font-normal align-super text-gray-500">Interiors</span></span>
+                <span class="text-2xl font-bold text-navy-dark tracking-tight -ml-1">Kinokusen</span>
+            </div>
+
+            <nav class="hidden md:flex space-x-8 text-sm font-medium text-gray-600">
+                <button @click="page = 'home'; selectedCategory = 'Semua'" :class="page === 'home' && selectedCategory === 'Semua' ? 'text-navy-dark border-b-2 border-navy-dark pb-1' : 'hover:text-navy-dark'">Beranda</button>
+                <button @click="showMegaMenu = !showMegaMenu" class="hover:text-navy-dark flex items-center gap-1">Kategori ▾</button>
+                <button @click="page = 'stores'" :class="page === 'stores' ? 'text-navy-dark border-b-2 border-navy-dark pb-1' : 'hover:text-navy-dark'">Lokasi Toko</button>
+                <button @click="page = 'admin'" :class="page === 'admin' ? 'text-red-600 font-bold border-b-2 border-red-600 pb-1' : 'text-red-500 hover:text-red-700 bg-red-50 px-2 rounded border border-red-200'">+ Tambah Barang (Admin)</button>
+            </nav>
+
+            <div class="flex items-center space-x-6">
+                <button class="text-gray-600 hover:text-navy-dark" @click="searchBar = !searchBar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </button>
+                <button class="text-gray-600 hover:text-navy-dark relative" @click="page = 'cart'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span x-show="cart.length > 0" x-text="cart.length" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center"></span>
+                </button>
+                <button @click="page = 'login'" class="bg-navy-dark text-white px-5 py-2 rounded text-xs font-bold">LOGIN</button>
+            </div>
+        </div>
+
+        <div x-show="searchBar" class="bg-gray-100 border-b border-gray-200 py-3 px-6">
+            <div class="max-w-xl mx-auto flex items-center bg-white border border-gray-300 rounded-md px-3 py-1">
+                <input type="text" x-model="searchQuery" placeholder="Cari nama produk furnitur..." class="w-full text-sm bg-transparent focus:outline-none py-1">
+                <button @click="searchQuery = ''" class="text-xs text-gray-400 hover:text-gray-600">Clear</button>
+            </div>
+        </div>
+
+        <div class="bg-navy-dark text-white text-xs font-medium tracking-wide">
+            <div class="max-w-7xl mx-auto px-6 flex space-x-8 h-12 items-center overflow-x-auto whitespace-nowrap">
+                <button @click="page = 'home'; selectedCategory = 'Semua'" :class="selectedCategory === 'Semua' ? 'text-yellow-400 font-bold' : 'opacity-80'" class="hover:opacity-100 mr-4">Semua</button>
+                <template x-for="cat in ['Furnitur', 'Kasur & Linen', 'Elektronik', 'Dekorasi', 'Perlengkapan Dapur']" :key="cat">
+                    <button @click="page = 'home'; selectedCategory = cat" 
+                       :class="selectedCategory === cat ? 'text-yellow-400 border-b-2 border-yellow-400 py-1 font-bold' : 'opacity-80'" 
+                       class="hover:opacity-100 mr-4" x-text="cat"></button>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="showMegaMenu" @click.away="showMegaMenu = false" class="absolute w-full bg-navy-dark text-white border-t border-blue-900 shadow-xl z-40 pb-12">
+            <div class="max-w-7xl mx-auto px-6 pt-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-xs">
+                <div>
+                    <h4 class="font-bold border-b border-white/20 pb-2 mb-3 text-yellow-400 cursor-pointer" @click="page='home'; selectedCategory='Furnitur'; showMegaMenu=false">Ruang Tamu & Furnitur</h4>
+                    <ul class="space-y-2 opacity-80">
+                        <li>Sofa Premium</li>
+                        <li>Meja Makan Minimalis</li>
+                        <li>Lemari Pakaian & Sepatu</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold border-b border-white/20 pb-2 mb-3 text-yellow-400 cursor-pointer" @click="page='home'; selectedCategory='Kasur & Linen'; showMegaMenu=false">Kamar Tidur</h4>
+                    <ul class="space-y-2 opacity-80">
+                        <li>Kasur Orthopedic</li>
+                        <li>Sprei Katun Jepang</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div x-show="page === 'home'">
+        <section class="relative bg-gray-800 h-[380px] text-white flex items-center overflow-hidden">
+            <img :src="banners[currentBanner].img" class="absolute inset-0 w-full h-full object-cover brightness-50">
+            <div class="relative max-w-7xl mx-auto px-6 w-full z-10">
+                <span class="text-xs uppercase bg-red-600 px-2 py-1 font-bold rounded mb-4 inline-block">HOT PROMO HARI INI</span>
+                <h1 class="text-3xl md:text-5xl font-bold leading-tight max-w-2xl" x-text="banners[currentBanner].title"></h1>
+            </div>
+            <button @click="currentBanner = currentBanner === 0 ? 1 : 0" class="absolute left-4 bg-black/40 p-2 rounded-full hover:bg-black/70 z-20">◀</button>
+            <button @click="currentBanner = currentBanner === 0 ? 1 : 0" class="absolute right-4 bg-black/40 p-2 rounded-full hover:bg-black/70 z-20">▶</button>
+        </section>
+
+        <main class="max-w-7xl mx-auto px-6 py-12">
+            <div class="flex justify-between items-center mb-8 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Penawaran Spesial</h2>
+                    <p class="text-xs text-gray-500 mt-1">Kategori Aktif: <span class="font-bold text-navy-dark" x-text="selectedCategory"></span></p>
+                </div>
+                <button x-show="selectedCategory !== 'Semua'" @click="selectedCategory = 'Semua'" class="text-xs text-red-500 font-bold hover:underline">Reset Filter</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <template x-for="product in products" :key="product.id">
+                    <div x-show="(selectedCategory === 'Semua' || product.category === selectedCategory) && (product.name.toLowerCase().includes(searchQuery.toLowerCase()))"
+                         class="bg-white rounded-lg p-3 border border-gray-100 flex flex-col justify-between shadow-sm hover:shadow-md transition">
+                        <div class="cursor-pointer" @click="activeProductModal = product">
+                            <div class="relative">
+                                <img :src="product.image" class="w-full aspect-square object-cover rounded mb-2">
+                                <span class="absolute top-2 left-2 bg-navy-dark text-white font-bold text-[9px] px-1.5 py-0.5 rounded" x-text="product.category"></span>
+                            </div>
+                            <h3 class="text-xs text-gray-600 font-medium line-clamp-2 min-h-[32px]" x-text="product.name"></h3>
+                            <p class="text-[10px] text-gray-400 mt-1">Sisa Stok: <span x-text="product.stock" :class="product.stock < 5 ? 'text-red-500 font-bold' : 'text-gray-600'"></span></p>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center space-x-2 mb-1" x-show="product.discount > 0">
+                                <span class="text-xs text-gray-400 line-through" x-text="formatRupiah(product.originalPrice)"></span>
+                                <span class="text-[10px] text-white font-bold bg-discount px-1 rounded" x-text="product.discount + '%'"></span>
+                            </div>
+                            <div class="text-sm font-bold text-gray-900 mb-3" x-text="formatRupiah(getDiscountPrice(product.originalPrice, product.discount))"></div>
+                            <button @click="addToCart(product)" class="w-full bg-navy-dark text-white py-1.5 rounded text-[11px] font-medium hover:bg-opacity-90">Beli Sekarang</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </main>
+    </div>
+
+    <div x-show="page === 'admin'" class="max-w-2xl mx-auto px-6 py-12">
+        <div class="bg-white border border-gray-200 p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl font-bold mb-2">Panel Tambah Barang Jualan</h2>
+            <p class="text-xs text-gray-400 border-b pb-4 mb-6">Barang yang ditambahkan akan langsung tayang di beranda utama.</p>
+            
+            <form @submit.prevent="
+                products.unshift({
+                    id: Date.now(),
+                    name: newProduct.name,
+                    category: newProduct.category,
+                    originalPrice: parseFloat(newProduct.originalPrice),
+                    discount: parseInt(newProduct.discount) || 0,
+                    stock: parseInt(newProduct.stock) || 5,
+                    image: newProduct.image || 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=400',
+                    desc: newProduct.desc || 'Deskripsi produk berkualitas tinggi dari Kinokusen.'
+                });
+                newProduct = { name: '', category: 'Furnitur', originalPrice: '', discount: 0, stock: 5, image: '', desc: '' };
+                alert('Barang Berhasil Ditambahkan!');
+                page = 'home';
+            " class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Nama Produk *</label>
+                    <input type="text" x-model="newProduct.name" required class="w-full border border-gray-300 p-2.5 rounded text-sm focus:border-blue-900 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Kategori *</label>
+                        <select x-model="newProduct.category" class="w-full border border-gray-300 p-2.5 rounded text-sm bg-white">
+                            <option>Furnitur</option>
+                            <option>Kasur & Linen</option>
+                            <option>Elektronik</option>
+                            <option>Dekorasi</option>
+                            <option>Perlengkapan Dapur</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Jumlah Stok Awal *</label>
+                        <input type="number" x-model="newProduct.stock" required class="w-full border border-gray-300 p-2.5 rounded text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Harga Awal (Rp) *</label>
+                        <input type="number" x-model="newProduct.originalPrice" required class="w-full border border-gray-300 p-2.5 rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Diskon (%)</label>
+                        <input type="number" x-model="newProduct.discount" class="w-full border border-gray-300 p-2.5 rounded text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-600 mb-1">URL Gambar</label>
+                    <input type="url" x-model="newProduct.image" placeholder="https://example.com/foto.jpg" class="w-full border border-gray-300 p-2.5 rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Deskripsi Produk</label>
+                    <textarea x-model="newProduct.desc" class="w-full border border-gray-300 p-2.5 rounded text-sm h-20"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded font-bold text-sm tracking-wide hover:bg-green-700 transition">SIMPAN BARANG JUALAN</button>
+            </form>
+        </div>
+    </div>
+
+    <div x-show="page === 'stores'" class="max-w-5xl mx-auto px-6 py-12">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-bold">Lokasi Toko Fisik</h2>
+                <p class="text-xs text-gray-400">Temukan showroom terdekat Anda.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center gap-2">
+                <span class="text-xs font-bold">Filter Kota:</span>
+                <select x-model="selectedCity" class="border border-gray-300 p-2 rounded text-xs bg-white">
+                    <option value="Semua">Semua Wilayah</option>
+                    <option value="Yogyakarta">Yogyakarta</option>
+                    <option value="Jakarta">Jakarta</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div x-show="selectedCity === 'Semua' || selectedCity === 'Yogyakarta'" class="bg-white border p-5 rounded-lg flex gap-4 shadow-sm">
+                <div class="w-1/3 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-[10px] text-center p-2">[MAP JOGJA]</div>
+                <div class="w-2/3">
+                    <h3 class="font-bold text-sm">AMBARUKMO PLAZA YOGYAKARTA</h3>
+                    <p class="text-xs text-gray-500 mt-1">Lantai 2, Plaza Ambarukmo, Sleman, DIY.</p>
+                    <button class="mt-4 bg-navy-dark text-white text-xs px-4 py-1.5 rounded">Rute Arah</button>
+                </div>
+            </div>
+            <div x-show="selectedCity === 'Semua' || selectedCity === 'Jakarta'" class="bg-white border p-5 rounded-lg flex gap-4 shadow-sm">
+                <div class="w-1/3 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-[10px] text-center p-2">[MAP JAKARTA]</div>
+                <div class="w-2/3">
+                    <h3 class="font-bold text-sm">ARTERI PONDOK INDAH</h3>
+                    <p class="text-xs text-gray-500 mt-1">Kebayoran Lama, Jakarta Selatan.</p>
+                    <button class="mt-4 bg-navy-dark text-white text-xs px-4 py-1.5 rounded">Rute Arah</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="page === 'cart'" class="max-w-3xl mx-auto px-6 py-12">
+        <h2 class="text-xl font-bold mb-6">Keranjang Belanja Anda</h2>
+        <div class="bg-white border rounded-lg p-6 shadow-sm">
+            <template x-if="cart.length === 0">
+                <div class="text-center py-12">
+                    <p class="text-gray-400 text-sm mb-4">Keranjang belanja Anda kosong.</p>
+                    <button @click="page = 'home'" class="bg-navy-dark text-white px-4 py-2 rounded text-xs font-semibold">Mulai Belanja</button>
+                </div>
+            </template>
+            <template x-if="cart.length > 0">
+                <div>
+                    <div class="space-y-4">
+                        <template x-for="(item, index) in cart" :key="index">
+                            <div class="flex items-center justify-between border-b pb-3">
+                                <div class="flex items-center space-x-3">
+                                    <img :src="item.image" class="w-12 h-12 object-cover rounded">
+                                    <div>
+                                        <h4 class="text-xs font-bold text-gray-800" x-text="item.name"></h4>
+                                        <span class="text-xs text-gray-600 font-semibold" x-text="formatRupiah(item.price)"></span>
+                                    </div>
+                                </div>
+                                <button @click="removeFromCart(item, index)" class="text-xs text-red-500 hover:underline">Hapus</button>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="mt-6 text-right border-t pt-4">
+                        <span class="text-sm text-gray-500">Total Pembayaran:</span>
+                        <div class="text-xl font-bold text-gray-900 mb-4" x-text="formatRupiah(cart.reduce((sum, item) => sum + item.price, 0))"></div>
+                        <button @click="alert('Checkout Berhasil!'); cart = []" class="bg-green-600 text-white px-6 py-2 rounded text-xs font-bold hover:bg-green-700 transition">Bayar Sekarang</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <div x-show="page === 'login'" class="max-w-sm mx-auto py-20">
+        <div class="bg-white border p-6 rounded-lg text-center shadow-sm">
+            <h2 class="text-2xl font-light mb-6">Login Akun</h2>
+            <form @submit.prevent="alert('Login Berhasil!'); page='home'" class="space-y-3">
+                <input type="email" placeholder="Email" required class="w-full border p-2 rounded text-sm focus:outline-none">
+                <input type="password" placeholder="Password" required class="w-full border p-2 rounded text-sm focus:outline-none">
+                <button class="w-full bg-navy-dark text-white py-2 rounded font-bold text-xs uppercase hover:bg-opacity-90">Masuk</button>
+            </form>
+        </div>
+    </div>
+
+    <div x-show="activeProductModal !== null" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div @click.away="activeProductModal = null" class="bg-white max-w-xl w-full rounded-xl overflow-hidden shadow-2xl p-6 relative">
+            <button @click="activeProductModal = null" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-lg">✕</button>
+            <template x-if="activeProductModal">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <img :src="activeProductModal.image" class="w-full aspect-square object-cover rounded-lg">
+                    <div class="flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] bg-blue-100 text-navy-dark font-bold px-2 py-0.5 rounded" x-text="activeProductModal.category"></span>
+                            <h3 class="text-sm font-bold text-gray-900 mt-2" x-text="activeProductModal.name"></h3>
+                            <p class="text-xs text-gray-500 mt-3" x-text="activeProductModal.desc"></p>
+                        </div>
+                        <div class="mt-6 border-t pt-4">
+                            <div class="text-xs text-gray-400 line-through" x-show="activeProductModal.discount > 0" x-text="formatRupiah(activeProductModal.originalPrice)"></div>
+                            <div class="text-lg font-black text-gray-900 mb-4" x-text="formatRupiah(getDiscountPrice(activeProductModal.originalPrice, activeProductModal.discount))"></div>
+                            <button @click="addToCart(activeProductModal); activeProductModal = null" class="w-full bg-navy-dark text-white py-2 rounded text-xs font-bold">Masukkan Keranjang</button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <footer class="bg-navy-dark text-white pt-12 pb-6 text-xs mt-20">
+        <div class="max-w-7xl mx-auto px-6 text-center opacity-40">
+            PT. Kinokusen Interiors Indonesia — Anti-Error Local Version.
+        </div>
+    </footer>
+</body>
+</html>
